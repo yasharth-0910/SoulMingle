@@ -21,6 +21,20 @@ $has_profile = $profile->getByUserId($_SESSION['user_id']);
 
 // Include notification bar`
 require_once "../includes/notification-bar.php";
+
+// Add this function at the top to handle profile photo
+function getProfilePhotoUrl($photoUrl) {
+    if (empty($photoUrl)) {
+        return "../assets/images/default-avatar.png";
+    }
+    
+    $photoPath = "../uploads/photos/" . $photoUrl;
+    if (file_exists($photoPath)) {
+        return $photoPath;
+    }
+    
+    return "../assets/images/default-avatar.png";
+}
 ?>
 
 <!DOCTYPE html>
@@ -62,9 +76,11 @@ require_once "../includes/notification-bar.php";
         <?php if($has_profile): ?>
             <div class="profile-grid">
                 <div class="profile-photo-section">
-                    <img src="../uploads/photos/<?php echo htmlspecialchars($profile->photo_url); ?>" 
-                         alt="Profile Photo" class="profile-photo">
-                    <div class="profile-actions">
+                    <img src="<?php echo getProfilePhotoUrl($profile->photo_url); ?>" 
+                         alt="Profile Photo" 
+                         class="profile-photo rounded-full shadow-lg"
+                         onerror="this.src='../assets/images/default-avatar.png'">
+                    <div class="profile-actions mt-4">
                         <a href="edit-profile.php" class="btn btn-primary">
                             <i class="fas fa-edit"></i> Edit Profile
                         </a>

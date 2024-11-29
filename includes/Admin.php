@@ -553,5 +553,64 @@ class Admin {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total'];
     }
+
+    public function getAllMatches($page = 1, $limit = 15, $status = '', $search = '') {
+        $offset = ($page - 1) * $limit;
+        
+        $query = "SELECT m.*, 
+                     u1.username as user1_name, u1.email as user1_email,
+                     u2.username as user2_name, u2.email as user2_email,
+                     p1.photo_url as user1_photo,
+                     p2.photo_url as user2_photo
+              FROM matches m
+              JOIN users u1 ON m.user_id = u1.id
+              JOIN users u2 ON m.match_user_id = u2.id
+              LEFT JOIN profiles p1 ON u1.id = p1.user_id
+              LEFT JOIN profiles p2 ON u2.id = p2.user_id
+              WHERE 1=1";
+        
+        if(!empty($status)) {
+            $query .= " AND m.status = :status";
+        }
+        
+        if(!empty($search)) {
+            $query .= " AND (u1.username LIKE :search OR u2.username LIKE :search 
+                            OR u1.email LIKE :search OR u2.email LIKE :search)";
+        }
+        
+        $query .= " ORDER BY m.created_at DESC LIMIT :limit OFFSET :offset";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        if(!empty($status)) {
+            $stmt->bindParam(":status", $status);
+        }
+        
+        if(!empty($search)) {
+            $searchTerm = "%{$search}%";
+            $stmt->bindParam(":search", $searchTerm);
+        }
+        
+        $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+        $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteMatch($match_id) {
+        $query = "DELETE FROM matches WHERE id = :match_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":match_id", $match_id);
+        return $stmt->execute();
+    }
+
+    public function updateMatchStatus($match_id, $status) {
+        $query = "UPDATE matches SET status = :status WHERE id = :match_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":status", $status);
+        $stmt->bindParam(":match_id", $match_id);
+        return $stmt->execute();
+    }
 }
 ?> 
